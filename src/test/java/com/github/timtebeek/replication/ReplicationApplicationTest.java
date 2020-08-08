@@ -8,7 +8,6 @@ import java.util.concurrent.Future;
 import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericRecord;
@@ -25,6 +24,8 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
@@ -44,8 +45,9 @@ import static org.springframework.kafka.test.assertj.KafkaConditions.value;
 		"transaction.state.log.replication.factor=1",
 		"transaction.state.log.min.isr=1"
 })
-@Slf4j
 class ReplicationApplicationTest {
+
+	private static final Logger log = LoggerFactory.getLogger(ReplicationApplicationTest.class);
 
 	static final String INPUT_TOPIC = "input-topic";
 	static final String OUTPUT_TOPIC = "output-topic";

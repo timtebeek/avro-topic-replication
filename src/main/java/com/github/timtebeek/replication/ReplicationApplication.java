@@ -3,8 +3,9 @@ package com.github.timtebeek.replication;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -23,8 +24,9 @@ import static java.util.stream.Collectors.toList;
 
 @SpringBootApplication
 @EnableKafka
-@Slf4j
 public class ReplicationApplication {
+
+	private static final Logger log = LoggerFactory.getLogger(ReplicationApplication.class);
 
 	public static void main(String[] args) throws Exception {
 		SpringApplication.run(ReplicationApplication.class, args);

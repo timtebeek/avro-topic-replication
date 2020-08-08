@@ -9,13 +9,12 @@ Even more so when the source topic is serialized with Avro, with the schema stor
 https://docs.confluent.io/current/schema-registry/index.html[Confluent Schema Registry].
 
 Here we present a minimal consumer that replicates a single Avro serialized Kafka topic from one cluster to another,
-while ensuring (only) the necessary Avro schema is registered in the target cluster.
+while ensuring (only) the necessary Avro schema is registered in the target cluster Schema Registry.
 
 === Approach
 
 We want to guarantee all records are reliably copied from the topic in the source cluster to the topic in the target cluster.
 As always, failures can happen, so we want to be mindful of how handle offset commits on both the consumer and producer side.
-Additionally, we want to ensure the Avro schema as registered in the source cluster is also registered in the target cluster Schema Registry.
 
 We choose to use https://spring.io/projects/spring-kafka[Spring for Apache Kafka] as it provides us with a convenient API to handle offset commits,
 as well as an easy means to configure consumers and producers separately for the two clusters involved.
@@ -29,8 +28,6 @@ Schema replication is automatically handled for us, provided we configure the co
 
 === Implementation details
 
-The full https://github.com/timtebeek/avro-topic-replication[sample application is available on Github].
-
 Our consumer is using the `@KafkaListener` annotation, with
 https://docs.spring.io/spring-kafka/reference/html/#committing-offsets[manual offset commits] and 
 https://docs.spring.io/spring-kafka/reference/html/#batch-listeners[batch-wise record handling].
@@ -40,6 +37,8 @@ To producer our records we use the callback inside `KafkaTemplate.executeInTrans
 Within the callback we call `KafkaOperations.send(String, K, V)` for each record individually.
 Finally, we verify each record has been produced successfully by calling `ListenableFuture<SendResult<K, V>>.get()`.
 Should any record have failed then we throw an exception to prevent the transaction commit, and fail the entire consumer batch.
+
+The full https://github.com/timtebeek/avro-topic-replication[sample application is available on Github], with relevant parts copied below.
 
 [source,java]
 ----
@@ -100,15 +99,16 @@ public void handle(List<GenericRecord> records, Acknowledgment ack) {
 === Unit testing
 
 To unit test this application we use a single embedded Kafka cluster with two separate topics, and separate mock schema registries.
-There's a few details that surrounding the transactional producer that require tweaks to the broker properties.
+There's a few details surrounding a transactional producer with a single broker that require tweaks to the broker properties.
 
 We create an Avro schema on the fly, for which we produce a record onto the input topic.
-Our application then processes this record, to produce it onto the target topic.
-Finally, we assert the record is produced onto the target topic within our test, and compare the produced key and value.
+Our application then processes this record, to produce a similar record onto the target topic.
+Finally, we assert the record produced onto the target topic matches the key and value we expect.
 
 https://github.com/timtebeek/avro-topic-replication/blob/master/src/test/java/com/github/timtebeek/replication/ReplicationApplicationTest.java[The full test class can be found on Github].
 
 === Testing with two clusters
+
 To fully test that our application works when connected to two separate clusters, we use Docker Compose to launch two clusters each with their own Schema Registry.
 We then use the `kafka-avro-console-producer` and `kafka-avro-console-consumer` bundled with the Schema Registry to produce a record and verify it is replicated successfully.
 
