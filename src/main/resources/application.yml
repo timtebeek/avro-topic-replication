@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: avro-topic-replication
+    
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      group-id: replicator
+      isolation-level: read-committed
+      key-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+
+    producer:
+      key-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      transaction-id-prefix: replicator
+
+replication:
+  source-topic: source-topic-a
+  target-topic: target-topic-b

@@ -1,0 +1,21 @@
+spring:
+  kafka:
+    consumer:
+      bootstrap-servers:
+      - localhost:9093
+      properties:
+        schema.registry.url: http://localhost:8083
+
+    producer:
+      bootstrap-servers:
+      - localhost:9094
+      properties:
+        schema.registry.url: http://localhost:8084
+
+  zipkin:
+    enabled: false
+
+logging:
+  level:
+    nl.portaalcts: debug
+

@@ -1,0 +1,71 @@
+version: "3.7"
+services:
+  # clusterA; ports: zookeeper=2183, kafka=9093, schema-registry=8083
+  zookeeper-clusterA:
+    image: wurstmeister/zookeeper
+    ports:
+      - target: 2181
+        published: 2183
+  kafka-clusterA:
+    image: wurstmeister/kafka
+    ports:
+      - target: 9092
+        published: 9093
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-clusterA:2181
+      KAFKA_LISTENERS: PLAINTEXT://:29092,PLAINTEXT_HOST://:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-clusterA:29092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_CREATE_TOPICS: source-topic-a:1:1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - "zookeeper-clusterA"
+  schema-registry-clusterA:
+    image: confluentinc/cp-schema-registry:5.4.2
+    ports:
+      - target: 8081
+        published: 8083
+    environment:
+      - SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=zookeeper-clusterA:2181
+      - SCHEMA_REGISTRY_HOST_NAME=schema-registry-clusterA
+      - SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081
+      - SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=PLAINTEXT://kafka-clusterA:29092
+    depends_on:
+      - "kafka-clusterA"
+
+  # clusterB; ports: zookeeper=2184, kafka=9094, schema-registry=8084
+  zookeeper-clusterB:
+    image: wurstmeister/zookeeper
+    ports:
+      - target: 2181
+        published: 2184
+  kafka-clusterB:
+    image: wurstmeister/kafka
+    ports:
+      - target: 9092
+        published: 9094
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-clusterB:2181
+      KAFKA_LISTENERS: PLAINTEXT://:29092,PLAINTEXT_HOST://:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-clusterB:29092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_CREATE_TOPICS: target-topic-b:1:1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - "zookeeper-clusterB"
+  schema-registry-clusterB:
+    image: confluentinc/cp-schema-registry:5.4.2
+    ports:
+      - target: 8081
+        published: 8084
+    environment:
+      - SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=zookeeper-clusterB:2181
+      - SCHEMA_REGISTRY_HOST_NAME=schema-registry-clusterB
+      - SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081
+      - SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=PLAINTEXT://kafka-clusterB:29092
+    depends_on:
+      - "kafka-clusterB"

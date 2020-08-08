@@ -1,0 +1,19 @@
+{
+	"type": "record",
+	"name": "Foo",
+	"namespace": "com.foo",
+	"fields": [
+		{
+			"name": "id",
+			"type": "string"
+		},
+		{
+			"name": "name",
+			"type": [
+				"null",
+				"string"
+			],
+			"default": null
+		}
+	]
+}

@@ -1,0 +1,7 @@
+target/
+.project
+.classpath
+.factorypath
+.settings/
+common-*
+schema-registry-*

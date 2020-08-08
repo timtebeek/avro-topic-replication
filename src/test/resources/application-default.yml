@@ -1,0 +1,15 @@
+spring:
+  kafka:
+    consumer:
+      bootstrap-servers: ${spring.embedded.kafka.brokers}
+      properties:
+        schema.registry.url: mock://SourceRegistry
+
+    producer:
+      bootstrap-servers: ${spring.embedded.kafka.brokers}
+      properties:
+        schema.registry.url: mock://TargetRegistry
+
+replication:
+  source-topic: input-topic
+  target-topic: output-topic
