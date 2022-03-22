@@ -60,27 +60,34 @@ public class ReplicationApplication {
 		kafkaTemplate.executeInTransaction(operations -> {
 			// Publish each individual record
 			var futureSendResults = records.stream()
-					.map(record -> {
+					.map(consumerRecord -> {
 						var sendResult = operations
-								.send(targetTopic, record.get("id").toString(), record);
+								.send(targetTopic, consumerRecord.get("id").toString(), consumerRecord);
 						// Report on failed records
 						sendResult.addCallback(
 								success -> log.info("Produced {}", success),
-								failure -> log.warn("Failed to produce {}", record, failure));
+								failure -> log.warn("Failed to produce {}", consumerRecord, failure));
 						return sendResult;
 					})
 					.collect(toList());
+
 			// Verify each record was published successfully
 			for (var future : futureSendResults) {
 				try {
 					future.get();
-				} catch (InterruptedException | ExecutionException e) {
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					// When any record fails, throw an exception to prevent transaction commit
+					log.warn("Failed to produce a record", e);
+					throw new RuntimeException("Failed to produce a record", e);
+				} catch (ExecutionException e) {
 					// When any record fails, throw an exception to prevent transaction commit
 					log.warn("Failed to produce a record", e);
 					throw new RuntimeException("Failed to produce a record", e);
 				}
 			}
-			// No need for a return value
+
+			// Commit transaction to make produced records available
 			return null;
 		});
 		// Commit offsets for entire batch on consumer

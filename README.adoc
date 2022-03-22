@@ -81,13 +81,18 @@ public void handle(List<GenericRecord> records, Acknowledgment ack) {
     for (var future : futureSendResults) {
       try {
         future.get();
-      } catch (InterruptedException | ExecutionException e) {
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        // When any record fails, throw an exception to prevent transaction commit
+        log.warn("Failed to produce a record", e);
+        throw new RuntimeException("Failed to produce a record", e);
+      } catch (ExecutionException e) {
         // When any record fails, throw an exception to prevent transaction commit
         log.warn("Failed to produce a record", e);
         throw new RuntimeException("Failed to produce a record", e);
       }
     }
-    // No need for a return value
+    // Commit transaction to make produced records available
     return null;
   });
   // Commit offsets for entire batch on consumer
