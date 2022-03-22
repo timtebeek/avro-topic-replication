@@ -15,6 +15,7 @@ import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -100,9 +101,23 @@ class ReplicationApplicationTest {
 		RecordMetadata recordMetadata = send.get();
 		log.info("Produced {}", recordMetadata);
 
+		// Verify consumer offset commit
+		Awaitility.await("consumer offset commit").untilAsserted(() -> {
+			OffsetAndMetadata offsetAndMetadata = KafkaTestUtils.getCurrentOffset(
+					broker.getBrokersAsString(),
+					"replicator",
+					INPUT_TOPIC,
+					0);
+			log.info("Received {}", offsetAndMetadata);
+			assertThat(offsetAndMetadata)
+					.isNotNull()
+					.extracting(OffsetAndMetadata::offset)
+					.isEqualTo(1L);
+		});
+
 		// Verify replicated to output topic
 		Awaitility.await().untilAsserted(() -> {
-			ConsumerRecord<String, GenericRecord> consumerRecord = KafkaTestUtils.getSingleRecord(this.outputConsumer,
+			ConsumerRecord<String, GenericRecord> consumerRecord = KafkaTestUtils.getSingleRecord(outputConsumer,
 					OUTPUT_TOPIC);
 			log.info("Received {}", consumerRecord);
 			assertThat(consumerRecord).has(key(id));
