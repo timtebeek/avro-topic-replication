@@ -19,6 +19,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties.AckMode;
 import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.stereotype.Component;
 
 import static java.util.stream.Collectors.toList;
 
@@ -26,20 +27,8 @@ import static java.util.stream.Collectors.toList;
 @EnableKafka
 public class ReplicationApplication {
 
-	private static final Logger log = LoggerFactory.getLogger(ReplicationApplication.class);
-
 	public static void main(String[] args) throws Exception {
 		SpringApplication.run(ReplicationApplication.class, args);
-	}
-
-	private final KafkaTemplate<String, GenericRecord> kafkaTemplate;
-	private final String targetTopic;
-
-	public ReplicationApplication(
-			KafkaTemplate<String, GenericRecord> kafkaTemplate,
-			@Value("${replication.target-topic}") String targetTopic) {
-		this.kafkaTemplate = kafkaTemplate;
-		this.targetTopic = targetTopic;
 	}
 
 	@Bean
@@ -51,6 +40,23 @@ public class ReplicationApplication {
 		factory.getContainerProperties().setAckMode(AckMode.MANUAL);
 		factory.setMissingTopicsFatal(true);
 		return factory;
+	}
+
+}
+
+@Component
+class Listener {
+
+	private static final Logger log = LoggerFactory.getLogger(Listener.class);
+
+	private final KafkaTemplate<String, GenericRecord> kafkaTemplate;
+	private final String targetTopic;
+
+	public Listener(
+			KafkaTemplate<String, GenericRecord> kafkaTemplate,
+			@Value("${replication.target-topic}") String targetTopic) {
+		this.kafkaTemplate = kafkaTemplate;
+		this.targetTopic = targetTopic;
 	}
 
 	@KafkaListener(topics = "${replication.source-topic}", containerFactory = "kafkaManualAckListenerContainerFactory")
